@@ -1,9 +1,10 @@
 import discord
 from discord.ext import commands
-import os
 import sys
 
-token = os.environ['token']
+with open("Secret.txt", "r") as f:
+    token = f.read()
+
 if not token:
     print("Error. No token enviroment variable")
     sys.exit(1)
