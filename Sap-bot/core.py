@@ -1,6 +1,6 @@
 from discord.ext import commands
 import time
-from Main import is_me
+from __main__ import is_me
 
 
 class core():
