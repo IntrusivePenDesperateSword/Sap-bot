@@ -74,7 +74,7 @@ async def commit_sudoku():
 
 @bot.command(hidden = True, pass_context = True)
 @is_me()
-async def reload():
+async def update():
     """reloads the bot from github files"""
     await bot.say("Okay, this will only make me stronger")
     await bot.logout()
