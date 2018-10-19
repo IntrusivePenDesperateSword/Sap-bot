@@ -6,7 +6,7 @@ with open("Secret.txt", "r") as f:
     token = f.read()
 
 if not token:
-    print("Error. No token enviroment variable")
+    print("Error. No token file called Secret.txt")
     sys.exit(1)
 
 description = '''A basic bot by sapsap'''
@@ -65,12 +65,21 @@ async def reload(extension_name: str):
 
 @bot.command(hidden=True, pass_context=True)
 @is_me()
-async def sleep():
-    """The bot goes to sleep, probably won't listen to plebs tho"""
-    await bot.say("Going to sleep now")
+async def commit_sudoku():
+    """The bot exits life and hopes it may rise later"""
+    await bot.say("This will not be the end, I will surely return!")
     await bot.logout()
     print("logged out")
+    sys.exit(1)
 
+@bot.command(hidden = True, pass_context = True)
+@is_me()
+async def reload():
+    """reloads the bot from github files"""
+    await bot.say("Okay, this will only make me stronger")
+    await bot.logout()
+    print("logged out")
+    sys.exit(0)
 
 if __name__ == "__main__":
     for extension in main_extensions:
