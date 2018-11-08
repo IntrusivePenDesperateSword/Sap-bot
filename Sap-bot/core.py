@@ -13,8 +13,11 @@ class core():
         time_1 = time.perf_counter()
         await self.bot.type()
         time_2 = time.perf_counter()
-        await self.bot.say(f"pong\n{round((time_2 - time_1) * 1000)} ms")
-
+        await self.bot.say(f"{round((time_2 - time_1) * 1000)} ms")
+        
+    
+    
+    # Unnecessary?
     @commands.command()
     async def echo(self, *, message: str):
         """Repeats what you just said"""
