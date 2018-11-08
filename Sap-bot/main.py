@@ -9,11 +9,11 @@ if not token:
     print("Error. No token file called Secret.txt")
     sys.exit(1)
 
-description = '''A basic bot by sapsap'''
+description = '''A bot for automatic emote replacement, mimicking virtual memory. Somewhat by IntrusivePenDesperateSword#7881.'''
 
-prefix = "_"
+prefix = "!"
 bot = commands.Bot(command_prefix=prefix, description=description)
-main_extensions = ["core", "misc", "maths", "rng"]
+main_extensions = ["core"]
 
 
 @bot.event
@@ -65,9 +65,9 @@ async def reload(extension_name: str):
 
 @bot.command(hidden=True, pass_context=True)
 @is_me()
-async def commit_sudoku():
-    """The bot exits life and hopes it may rise later"""
-    await bot.say("This will not be the end, I will surely return!")
+async def logout():
+    """The bot logs out"""
+    await bot.say("Logging out.")
     await bot.logout()
     print("logged out")
     sys.exit(1)
@@ -76,7 +76,7 @@ async def commit_sudoku():
 @is_me()
 async def update():
     """reloads the bot from github files"""
-    await bot.say("Okay, this will only make me stronger")
+    await bot.say("Updating.")
     await bot.logout()
     print("logged out")
     sys.exit(0)
