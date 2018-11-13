@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import sys
+import time
 import json
 
 with open("Secret.txt", "r") as f:
@@ -22,10 +23,10 @@ async def on_ready():
     bot.owner = temp.owner
     await bot.change_presence(game=discord.Game(name=f"for info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
-    
-    in_serv = [i for i in bot.get_all_emojis()]
+
+    bot.in_server = [i for i in bot.get_all_emojis()]
     with open("emojis.json", "r") as f:
-        out_serv = f.read().split("\n")[0]
+        bot.out_server = f.read().split("\n")[0]
 
 
 def is_me():
@@ -43,40 +44,41 @@ async def ping():
     time_2 = time.perf_counter()
     await bot.say(f"{round((time_2 - time_1) * 1000)} ms")
 
-    
+
 @commands.command(pass_context=True)
 async def save():
     bot.in_server = bot.get_all_emojis()
     with open("emoji.json", "w") as f:
-        f.write(str(out_serv) + "\n" + str(bot.in_server))
+        f.write(str(bot.out_server) + "\n" + str(bot.in_server))
     await bot.say("Saved emoji.")
 
-    
+
 @commands.command(pass_context=True)
 async def load():
     with open("emoji.json", "r") as f:
-        out_serv, in_serv = f.read().split("\n")
+        bot.out_server, bot.in_server = f.read().split("\n")
 
     await bot.say("Loaded emoji.")
+
 
 @commands.command(pass_context=True)
 async def add(emojiname):
     worst = ["", "", "11111111111"]
-    # assert emojiname is in in_serv
-        
+    # assert emojiname is in in_server
+
     worstInd = 0
-    for i in range(len(in_serv)):
-        if in_serv[i][2] < worst[2]: # Convert to binary somehow?
-            worst  = in_serv[i]
+    for i in range(len(bot.in_server)):
+        if bot.in_server[i][2] < worst[2]:  # Convert to binary somehow?
+            worst = in_serv[i]
             worstInd = i
     await bot.say(f"Removing {worst[0]}, and adding {emojiname}...")
     new = []
-    out_serv.append(in_serv.pop(worstInd))
-    for i in out_serv:
+    bot.out_server.append(bot.in_server.pop(worstInd))
+    for i in bot.out_server:
         if i[0] == emojiname:
             new = i
 
-    discord.addEmoji(new) # Not the right format but whatever
+    discord.addEmoji(new)  # Not the right format but whatever
 
 
 @bot.command(hidden=True)
@@ -87,7 +89,6 @@ async def logout():
     await bot.logout()
     print("logged out")
     sys.exit(0)
-
 
 
 bot.run(token)
