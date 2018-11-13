@@ -63,23 +63,15 @@ async def reload(extension_name: str):
         await bot.say(f"{extension_name} succsessfully reloaded")
 
 
-@bot.command(hidden=True, pass_context=True)
+@bot.command(hidden=True)
 @is_me()
 async def logout():
     """The bot logs out"""
     await bot.say("Logging out.")
     await bot.logout()
     print("logged out")
-    sys.exit(1)
-
-@bot.command(hidden = True, pass_context = True)
-@is_me()
-async def update():
-    """reloads the bot from github files"""
-    await bot.say("Updating.")
-    await bot.logout()
-    print("logged out")
     sys.exit(0)
+
 
 if __name__ == "__main__":
     for extension in main_extensions:
