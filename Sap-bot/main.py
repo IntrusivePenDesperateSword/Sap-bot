@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import sys
+import json
 
 with open("Secret.txt", "r") as f:
     token = f.read()
@@ -13,7 +14,6 @@ description = '''A bot for automatic emote replacement, mimicking virtual memory
 
 prefix = "!"
 bot = commands.Bot(command_prefix=prefix, description=description)
-main_extensions = ["core"]
 
 
 @bot.event
@@ -22,6 +22,10 @@ async def on_ready():
     bot.owner = temp.owner
     await bot.change_presence(game=discord.Game(name=f"for info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
+    
+    in_serv = [i for i in bot.get_all_emojis()]
+    with open("emojis.json", "r") as f:
+        out_serv = f.read().split("\n")[0]
 
 
 def is_me():
@@ -31,36 +35,48 @@ def is_me():
     return commands.check(predicate)
 
 
-@bot.command()
-@is_me()
-async def load(extension_name: str):
-    """Loads an extension."""
-    try:
-        bot.load_extension(extension_name)
-    except (AttributeError, ImportError) as e:
-        await bot.say(f"```py\n{type(e).__name__}: {str(e)}\n```")
-        return
-    await bot.say("{} loaded.".format(extension_name))
+@commands.command(pass_context=True)
+async def ping():
+    """Shows how long the delay is"""
+    time_1 = time.perf_counter()
+    await bot.type()
+    time_2 = time.perf_counter()
+    await bot.say(f"{round((time_2 - time_1) * 1000)} ms")
 
+    
+@commands.command(pass_context=True)
+async def save():
+    bot.in_server = bot.get_all_emojis()
+    with open("emoji.json", "w") as f:
+        f.write(str(out_serv) + "\n" + str(bot.in_server))
+    await bot.say("Saved emoji.")
 
-@bot.command()
-@is_me()
-async def unload(extension_name: str):
-    """Unloads an extension."""
-    bot.unload_extension(extension_name)
-    await bot.say(f"{extension_name} unloaded.")
+    
+@commands.command(pass_context=True)
+async def load():
+    with open("emoji.json", "r") as f:
+        out_serv, in_serv = f.read().split("\n")
 
+    await bot.say("Loaded emoji.")
 
-@bot.command()
-@is_me()
-async def reload(extension_name: str):
-    try:
-        bot.unload_extension(extension_name)
-        bot.load_extension(extension_name)
-    except Exception as e:
-        await bot.say(f"{e.__name__}: {e}")
-    else:
-        await bot.say(f"{extension_name} succsessfully reloaded")
+@commands.command(pass_context=True)
+async def add(emojiname):
+    worst = ["", "", "11111111111"]
+    # assert emojiname is in in_serv
+        
+    worstInd = 0
+    for i in range(len(in_serv)):
+        if in_serv[i][2] < worst[2]: # Convert to binary somehow?
+            worst  = in_serv[i]
+            worstInd = i
+    await bot.say(f"Removing {worst[0]}, and adding {emojiname}...")
+    new = []
+    out_serv.append(in_serv.pop(worstInd))
+    for i in out_serv:
+        if i[0] == emojiname:
+            new = i
+
+    discord.addEmoji(new) # Not the right format but whatever
 
 
 @bot.command(hidden=True)
@@ -73,12 +89,5 @@ async def logout():
     sys.exit(0)
 
 
-if __name__ == "__main__":
-    for extension in main_extensions:
-        try:
-            bot.load_extension(extension)
-        except Exception as e:
-            exc = f'{type(e).__name__}: {e}'
-            print(f'Failed to load extension {extension}\n{exc}')
 
-    bot.run(token)
+bot.run(token)
