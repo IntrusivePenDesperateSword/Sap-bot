@@ -1,2 +1,2 @@
-# Sap-bot
-My attempt at a discord bot
+# EmojiBot
+A Discord bot for switching in and out emoji as requested
