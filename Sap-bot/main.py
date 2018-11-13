@@ -69,7 +69,7 @@ async def add(emojiname):
     worstInd = 0
     for i in range(len(bot.in_server)):
         if bot.in_server[i][2] < worst[2]:  # Convert to binary somehow?
-            worst = in_serv[i]
+            worst = bot.in_server[i]
             worstInd = i
     await bot.say(f"Removing {worst[0]}, and adding {emojiname}...")
     new = []
