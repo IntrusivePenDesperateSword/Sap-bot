@@ -17,11 +17,37 @@ class core():
         
     
     
-    # Unnecessary?
-    @commands.command()
-    async def echo(self, *, message: str):
-        """Repeats what you just said"""
-        await self.bot.say(f"{message}")
+    def save():
+    in_serv = discord.getEmoji();
+    with open("emoji.txt", "w") as f:
+        f.write(str(out_serv) + "\n" + str(in_serv))
+
+    await bot.say("Saved emoji.")
+
+    def load():
+        with open("emoji.txt", "r") as f:
+            out_serv, in_serv = f.read().split("\n")
+
+        await bot.say("Loaded emoji.")
+
+    def add(emojiname):
+        worst = ["", "", "11111111111"]
+        # assert emojiname is in in_serv
+        worstInd = 0
+        for i in range(len(in_serv)):
+            if in_serv[i][2] < worst[2]: # Convert to binary somehow?
+                worst  = in_serv[i]
+                worstInd = i
+
+        await bot.say(f"Removing {worst[0]}, and adding {emojiname}...")
+
+        new = []
+        out_serv.append(in_serv.pop(in_serv.index(worst)))
+        for i in out_serv:
+            if i[0] == emojiname:
+                new = i
+    
+        discord.addEmoji(new) # Not the right format but whatever
 
 
 def setup(bot):
