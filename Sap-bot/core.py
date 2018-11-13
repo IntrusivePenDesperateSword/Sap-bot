@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 import time
 
@@ -16,9 +17,9 @@ class core():
 
     @commands.command(pass_context=True)
     async def save(self):
-        in_serv = discord.getEmojis();
+        self.bot.in_server = self.bot.get_all_emojis()
         with open("emoji.txt", "w") as f:
-            f.write(str(out_serv) + "\n" + str(in_serv))
+            f.write(str(out_serv) + "\n" + str(self.bot.in_server))
         await self.bot.say("Saved emoji.")
 
     @commands.command(pass_context=True)
