@@ -24,7 +24,7 @@ async def on_ready():
     await bot.change_presence(game=discord.Game(name=f"for info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
 
-    bot.in_server = [i for i in bot.get_all_emojis()]
+    bot.in_server = await bot.get_all_emojis()
     with open("emojis.json", "r") as f:
         bot.out_server = f.read().split("\n")[0]
 
@@ -47,7 +47,7 @@ async def ping():
 
 @commands.command(pass_context=True)
 async def save():
-    bot.in_server = bot.get_all_emojis()
+    bot.in_server = await bot.get_all_emojis()
     with open("emoji.json", "w") as f:
         f.write(str(bot.out_server) + "\n" + str(bot.in_server))
     await bot.say("Saved emoji.")
