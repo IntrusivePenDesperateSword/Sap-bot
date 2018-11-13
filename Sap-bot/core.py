@@ -16,7 +16,7 @@ class core():
 
     @commands.command(pass_context=True)
     async def save(self):
-        in_serv = discord.get_all_emojis();
+        in_serv = discord.getEmojis();
         with open("emoji.txt", "w") as f:
             f.write(str(out_serv) + "\n" + str(in_serv))
         await self.bot.say("Saved emoji.")
@@ -31,7 +31,7 @@ class core():
     @commands.command(pass_context=True)
     async def add(self, emojiname):
         worst = ["", "", "11111111111"]
-        # assert emojiname is in out_serv
+        # assert emojiname is in in_serv
         
         worstInd = 0
         for i in range(len(in_serv)):
