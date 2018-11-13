@@ -26,7 +26,7 @@ async def on_ready():
 
     bot.in_server = await bot.get_all_emojis()
     with open("emojis.json", "r") as f:
-        bot.out_server = f.read().split("\n")[0]
+        bot.out_server = json.load(f)[0]
 
 
 def is_me():
@@ -49,14 +49,14 @@ async def ping():
 async def save():
     bot.in_server = await bot.get_all_emojis()
     with open("emoji.json", "w") as f:
-        f.write(str(bot.out_server) + "\n" + str(bot.in_server))
+        json.dump(str(bot.out_server) + "\n" + str(bot.in_server), f)
     await bot.say("Saved emoji.")
 
 
 @commands.command(pass_context=True)
 async def load():
     with open("emoji.json", "r") as f:
-        bot.out_server, bot.in_server = f.read().split("\n")
+        bot.out_server, bot.in_server = json.load(f)
 
     await bot.say("Loaded emoji.")
 
