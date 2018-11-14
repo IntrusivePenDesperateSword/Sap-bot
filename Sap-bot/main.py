@@ -72,6 +72,8 @@ async def test():"""
 
 @bot.command(pass_context=True)
 async def save():
+    """Reloads all emoji in the server, and saves the ones out of it to the file."""
+    global in_server
     in_server = await bot.get_all_emojis()
     with open("emoji.json", "w") as f:
         json.dump(str(out_server), f)
@@ -80,6 +82,8 @@ async def save():
 
 @bot.command(pass_context=True)
 async def load():
+    """Gets unloaded emojis from the file."""
+    global out_server
     with open("emoji.json", "r") as f:
         out_server = json.load(f)
 
@@ -88,24 +92,26 @@ async def load():
 
 @bot.command(pass_context=True)
 async def add(emojiname):
-    worst = {"emoji":None, "Age":"1"*age_length, "Referenced":0}
-    # assert emojiname is in in_server
+    worst = {"worst":{"emoji":None, "Age":"1"*age_length, "Referenced":0}}
+    if emojiname not in out_server.keys():
+        await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
+        return emojiname
 
-    worstInd = 0
-    for i in range(len(bot.in_server)):
-        if in_server[i][1] < worst[1]:
-            worst = in_server[i]
-            worstInd = i
-    await bot.say(f"Removing {worst[0]}, and adding {emojiname}...")
-    new = []
-    out_server.append(bot.in_server.pop(worstInd))
+    if emojiname in in_server.keys():
+        await bot.say(f"The emoji {emojiname} is already loaded.")
+        return emojiname
+
+
+    for key, value in in_server:
+        if value["Age"] < worst["Age"]:
+            worst = {value["Name"]:value}
+    await bot.say(f'Removing {worst["Name"]}, and adding {emojiname}...')
+
+    in_server[emojiname] = out_server.pop(emojiname)
+    out_server[worst["Name"]] = in_server.pop(worst["Name"])
     await save()
 
-    for i in out_server:
-        if i[0] == emojiname:
-            new = i
-
-    #discord.addEmoji(new)  # Not the right format but whatever
+    # discord.addEmoji(in_server[emojiname])  # Not the right format but whatever
 
 
 @bot.command(hidden=True)
