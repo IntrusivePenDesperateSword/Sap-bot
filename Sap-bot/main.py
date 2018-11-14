@@ -12,6 +12,7 @@ if not token:
 
 description = '''A bot for automatic emote replacement, mimicking virtual memory. Somewhat by IntrusivePenDesperateSword#7881.'''
 
+in_server, out_server = {}, {}
 prefix = "!"
 clock_hours = 12
 age_length = 16
@@ -25,9 +26,9 @@ async def on_ready():
     await bot.change_presence(game=discord.Game(name=f"for info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
 
-    bot.in_server = await bot.get_all_emojis()
-    with open("emojis.json", "r") as f:
-        bot.out_server = json.load(f)[0]
+    in_server = bot.get_all_emojis()
+    with open("emoji.json", "r") as f:
+        out_server = json.load(f)
 
 
 def is_me():
@@ -39,11 +40,11 @@ def is_me():
 
 @bot.event
 async def on_reaction_add(reaction, user):
-    bot.in_serv[reaction.emoji.name]["Referenced"] = 1
+    in_server[reaction.emoji.name]["Referenced"] = 1
 
 
 def update_age():
-    for key, value in bot.in_serv:
+    for key, value in in_server:
         value[1] = str(value[2]) + value[1][:-1]
         value[2] = 0
 
@@ -56,7 +57,7 @@ async def clock():
         await asyncio.sleep(3600*clock_hours)
 
 
-@commands.command(pass_context=True)
+@commands.command()
 async def ping():
     """Shows how long the delay is"""
     time_1 = time.perf_counter()
@@ -65,18 +66,22 @@ async def ping():
     await bot.say(f"{round((time_2 - time_1) * 1000)} ms")
 
 
+"""@commands.command(pass_context=True)
+async def test():"""
+
+
 @commands.command(pass_context=True)
 async def save():
-    bot.in_server = await bot.get_all_emojis()
+    in_server = await bot.get_all_emojis()
     with open("emoji.json", "w") as f:
-        json.dump(str(bot.out_server), f)
+        json.dump(str(out_server), f)
     #await bot.say("Saved emoji.")
 
 
 @commands.command(pass_context=True)
 async def load():
     with open("emoji.json", "r") as f:
-        bot.out_server = json.load(f)
+        out_server = json.load(f)
 
     await bot.say("Loaded emoji.")
 
@@ -88,15 +93,15 @@ async def add(emojiname):
 
     worstInd = 0
     for i in range(len(bot.in_server)):
-        if bot.in_server[i][1] < worst[1]:
-            worst = bot.in_serv[i]
+        if in_server[i][1] < worst[1]:
+            worst = in_server[i]
             worstInd = i
     await bot.say(f"Removing {worst[0]}, and adding {emojiname}...")
     new = []
-    bot.out_server.append(bot.in_server.pop(worstInd))
+    out_server.append(bot.in_server.pop(worstInd))
     await save()
 
-    for i in bot.out_server:
+    for i in out_server:
         if i[0] == emojiname:
             new = i
 
