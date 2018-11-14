@@ -1,7 +1,9 @@
 import discord
 from discord.ext import commands
-import sys, time, json, asyncio
-
+import sys
+import time
+import json
+import asyncio
 
 with open("Secret.txt", "r") as f:
     token = f.read()
@@ -54,7 +56,7 @@ async def clock():
 
     while not bot.is_closed:
         update_age()
-        await asyncio.sleep(3600*clock_hours)
+        await asyncio.sleep(3600 * clock_hours)
 
 
 @bot.command()
@@ -66,8 +68,12 @@ async def ping():
     await bot.say(f"{round((time_2 - time_1) * 1000)} ms")
 
 
-"""@bot.command(pass_context=True)
-async def test():"""
+@bot.command(pass_context=True)
+async def test(ctx):
+    """Reacts with all emoji in the server"""
+    for key, value in in_server:  # in_server.keys()
+        await bot.add_reaction(ctx.message, value["Emoji"])
+        await asyncio.sleep(0.2)
 
 
 @bot.command(pass_context=True)
@@ -77,7 +83,7 @@ async def save():
     in_server = await bot.get_all_emojis()
     with open("emoji.json", "w") as f:
         json.dump(str(out_server), f)
-    #await bot.say("Saved emoji.")
+    # await bot.say("Saved emoji.")
 
 
 @bot.command(pass_context=True)
@@ -92,7 +98,7 @@ async def load():
 
 @bot.command(pass_context=True)
 async def add(emojiname):
-    worst = {"worst":{"emoji":None, "Age":"1"*age_length, "Referenced":0}}
+    worst = {"worst": {"emoji": None, "Age": "1" * age_length, "Referenced": 0}}
     if emojiname not in out_server.keys():
         await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
         return emojiname
@@ -101,10 +107,9 @@ async def add(emojiname):
         await bot.say(f"The emoji {emojiname} is already loaded.")
         return emojiname
 
-
     for key, value in in_server:
         if value["Age"] < worst["Age"]:
-            worst = {value["Name"]:value}
+            worst = {value["Name"]: value}
     await bot.say(f'Removing {worst["Name"]}, and adding {emojiname}...')
 
     in_server[emojiname] = out_server.pop(emojiname)
@@ -122,6 +127,7 @@ async def logout():
     await bot.logout()
     print("logged out")
     sys.exit(0)
+
 
 bot.loop.create_task(clock())
 bot.run(token)
