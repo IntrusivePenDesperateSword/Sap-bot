@@ -16,19 +16,25 @@ description = '''A bot for automatic emote replacement, mimicking virtual memory
 
 in_server, out_server = {}, {}
 prefix = "!"
-clock_hours = 12
+clock_hours = 1/180
 age_length = 16
 bot = commands.Bot(command_prefix=prefix, description=description)
 
 
 @bot.event
 async def on_ready():
+    global in_server
+    global out_server
+
     temp = await bot.application_info()
     bot.owner = temp.owner
     await bot.change_presence(game=discord.Game(name=f"for info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
 
-    in_server = bot.get_all_emojis()
+    in_server = {i.name:{"Emoji": i.id, "Age": "0" * age_length, "Referenced": 0}
+                 for i in bot.get_all_emojis()}
+
+
     with open("emoji.json", "r") as f:
         out_server = json.load(f)
 
@@ -42,20 +48,21 @@ def is_me():
 
 @bot.event
 async def on_reaction_add(reaction, user):
-    in_server[reaction.emoji.name]["Referenced"] = 1
+    if user != bot.user:
+        in_server[reaction.emoji.name]["Referenced"] = 1
 
 
-def update_age():
+async def update_age():
     for key, value in in_server:
-        value[1] = str(value[2]) + value[1][:-1]
-        value[2] = 0
+        value["Age"] = str(value["Referenced"]) + value["Age"][:-1]
+        value["Referenced"] = 0
 
 
 async def clock():
     await bot.wait_until_ready()
 
     while not bot.is_closed:
-        update_age()
+        await update_age()
         await asyncio.sleep(3600 * clock_hours)
 
 
@@ -70,50 +77,68 @@ async def ping():
 
 @bot.command(pass_context=True)
 async def test(ctx):
-    """Reacts with all emoji in the server"""
-    for key, value in in_server:  # in_server.keys()
-        await bot.add_reaction(ctx.message, value["Emoji"])
-        await asyncio.sleep(0.2)
+    """Reacts with all emojis in the server"""
+    for key, value in in_server.items():  # in_server.keys()
+        await bot.add_reaction(ctx.message, f'{key}:{value["Emoji"]}')
+        await asyncio.sleep(0.1)
 
 
-@bot.command(pass_context=True)
 async def save():
-    """Reloads all emoji in the server, and saves the ones out of it to the file."""
-    global in_server
-    in_server = await bot.get_all_emojis()
-    with open("emoji.json", "w") as f:
-        json.dump(str(out_server), f)
-    # await bot.say("Saved emoji.")
-
-
-@bot.command(pass_context=True)
-async def load():
-    """Gets unloaded emojis from the file."""
+    """Saves unloaded emojis to the file."""
     global out_server
+    with open("emoji.json", "w") as f:
+        json.dump(out_server, f)
+    await bot.say("Saved emoji.")
+
+
+@bot.command()
+async def load():
+    """Gets unloaded emojis from the file and loaded from Discord."""
+    global out_server
+    global in_server
+    in_server = {i.name:{"Emoji": i.id, "Age": "0" * age_length, "Referenced": 0}
+                 for i in bot.get_all_emojis()}
+
     with open("emoji.json", "r") as f:
         out_server = json.load(f)
 
     await bot.say("Loaded emoji.")
 
 
-@bot.command(pass_context=True)
-async def add(emojiname):
-    worst = {"worst": {"emoji": None, "Age": "1" * age_length, "Referenced": 0}}
-    if emojiname not in out_server.keys():
-        await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
-        return emojiname
+@bot.command()
+async def unload(name):
+    """Puts an emoji in the server, out of it. For debugging."""
+    global out_server
+    global in_server
 
+    if name not in in_server.keys():
+        await bot.say("The emoji didn't appear to be loaded. Misspelled?")
+        return -1
+
+    out_server[name] = in_server.pop(name)
+
+    await bot.say(f"{name} switched out successfully.")
+    await save()
+
+
+@bot.command()
+async def add(emojiname):
+    worst = {"worst": {"Emoji": 0, "Age": "1" * age_length, "Referenced": 0}}
     if emojiname in in_server.keys():
         await bot.say(f"The emoji {emojiname} is already loaded.")
         return emojiname
 
+    if emojiname not in out_server.keys():
+        await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
+        return emojiname
+
     for key, value in in_server:
         if value["Age"] < worst["Age"]:
-            worst = {value["Name"]: value}
-    await bot.say(f'Removing {worst["Name"]}, and adding {emojiname}...')
+            worst = {key: value}
+    await bot.say(f'Removing {worst.keys()[0]}, and adding {emojiname}...')
 
     in_server[emojiname] = out_server.pop(emojiname)
-    out_server[worst["Name"]] = in_server.pop(worst["Name"])
+    out_server[worst.keys()[0]] = in_server.pop(worst.keys()[0])
     await save()
 
     # discord.addEmoji(in_server[emojiname])  # Not the right format but whatever
@@ -126,7 +151,6 @@ async def logout():
     await bot.say("Logging out.")
     await bot.logout()
     print("logged out")
-    sys.exit(0)
 
 
 bot.loop.create_task(clock())
