@@ -57,7 +57,7 @@ async def clock():
         await asyncio.sleep(3600*clock_hours)
 
 
-@commands.command()
+@bot.command()
 async def ping():
     """Shows how long the delay is"""
     time_1 = time.perf_counter()
@@ -66,11 +66,11 @@ async def ping():
     await bot.say(f"{round((time_2 - time_1) * 1000)} ms")
 
 
-"""@commands.command(pass_context=True)
+"""@bot.command(pass_context=True)
 async def test():"""
 
 
-@commands.command(pass_context=True)
+@bot.command(pass_context=True)
 async def save():
     in_server = await bot.get_all_emojis()
     with open("emoji.json", "w") as f:
@@ -78,7 +78,7 @@ async def save():
     #await bot.say("Saved emoji.")
 
 
-@commands.command(pass_context=True)
+@bot.command(pass_context=True)
 async def load():
     with open("emoji.json", "r") as f:
         out_server = json.load(f)
@@ -86,7 +86,7 @@ async def load():
     await bot.say("Loaded emoji.")
 
 
-@commands.command(pass_context=True)
+@bot.command(pass_context=True)
 async def add(emojiname):
     worst = {"emoji":None, "Age":"1"*age_length, "Referenced":0}
     # assert emojiname is in in_server
