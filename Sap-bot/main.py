@@ -4,6 +4,7 @@ import sys
 import time
 import json
 import asyncio
+import aiohttp
 
 with open("Secret.txt", "r") as f:
     token = f.read()
@@ -16,7 +17,7 @@ description = '''A bot for automatic emote replacement, mimicking virtual memory
 
 in_server, out_server = {}, {}
 prefix = "!"
-clock_hours = 1/180
+clock_hours = 1  # /180
 age_length = 16
 bot = commands.Bot(command_prefix=prefix, description=description)
 
@@ -31,9 +32,10 @@ async def on_ready():
     await bot.change_presence(game=discord.Game(name=f"for info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
 
-    in_server = {i.name:{"Emoji": i.id, "Age": "0" * age_length, "Referenced": 0}
+    in_server = {i.name:{"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
                  for i in bot.get_all_emojis()}
 
+    print(in_server)
 
     with open("emoji.json", "r") as f:
         out_server = json.load(f)
@@ -96,7 +98,7 @@ async def load():
     """Gets unloaded emojis from the file and loaded from Discord."""
     global out_server
     global in_server
-    in_server = {i.name:{"Emoji": i.id, "Age": "0" * age_length, "Referenced": 0}
+    in_server = {i.name:{"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
                  for i in bot.get_all_emojis()}
 
     with open("emoji.json", "r") as f:
@@ -126,7 +128,7 @@ async def unload(emojiname):
 @bot.command()
 async def add(emojiname):
     """Loads the requested emoji, and unloads one that hasn't been used in a while."""
-    worst = {"worst": {"Emoji": 0, "Age": "1" * age_length, "Referenced": 0}}
+    worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
     if emojiname in in_server.keys():
         await bot.say(f"The emoji {emojiname} is already loaded.")
         return emojiname
@@ -145,16 +147,23 @@ async def add(emojiname):
     await save()
 
     # await bot.delete_custom_emoji(bot.utils.get(bot.Server.emojis, name==list(worst.keys())[0]))
-    # await bot.create_custom_emoji(server, emojiname, image)  # Not the right format but whatever
+
+    async with aiohttp.ClientSession() as ses:
+        async with ses.get(in_server[emojiname]["URL"]) as r:
+            img = await r.read()
+
+    await bot.create_custom_emoji(bot.Server, emojiname, img)
 
 
-@bot.command(hidden=True)
-@is_me()
-async def logout():
+@bot.command(hidden=True, pass_context=True)
+async def logout(ctx):
     """The bot logs out"""
-    await bot.say("Logging out.")
-    await bot.logout()
-    print("Logged out")
+    if ctx.message.author.id == bot.owner.id:
+        await bot.say("Logging out.")
+        await bot.logout()
+        print("Logged out")
+    else:
+        await bot.say("This command is reserved for the bot's owner, IntrusivePenDesperateSword. If you want me dead so bad, ask him.")
 
 
 bot.loop.create_task(clock())
