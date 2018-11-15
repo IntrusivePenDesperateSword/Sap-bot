@@ -106,23 +106,26 @@ async def load():
 
 
 @bot.command()
-async def unload(name):
+async def unload(emojiname):
     """Puts an emoji in the server, out of it. For debugging."""
     global out_server
     global in_server
 
-    if name not in in_server.keys():
+    if emojiname not in in_server.keys():
         await bot.say("The emoji didn't appear to be loaded. Misspelled?")
         return -1
 
-    out_server[name] = in_server.pop(name)
+    out_server[emojiname] = in_server.pop(emojiname)
 
-    await bot.say(f"{name} switched out successfully.")
+    # await bot.delete_custom_emoji(bot.utils.get(bot.Server.emojis, name==emojiname))
+
+    await bot.say(f"{emojiname} switched out successfully.")
     await save()
 
 
 @bot.command()
 async def add(emojiname):
+    """Loads the requested emoji, and unloads one that hasn't been used in a while."""
     worst = {"worst": {"Emoji": 0, "Age": "1" * age_length, "Referenced": 0}}
     if emojiname in in_server.keys():
         await bot.say(f"The emoji {emojiname} is already loaded.")
@@ -138,10 +141,11 @@ async def add(emojiname):
     await bot.say(f'Removing {worst.keys()[0]}, and adding {emojiname}...')
 
     in_server[emojiname] = out_server.pop(emojiname)
-    out_server[worst.keys()[0]] = in_server.pop(worst.keys()[0])
+    out_server[list(worst.keys())[0]] = in_server.pop(list(worst.keys())[0])
     await save()
 
-    # discord.addEmoji(in_server[emojiname])  # Not the right format but whatever
+    # await bot.delete_custom_emoji(bot.utils.get(bot.Server.emojis, name==list(worst.keys())[0]))
+    # await bot.create_custom_emoji(server, emojiname, image)  # Not the right format but whatever
 
 
 @bot.command(hidden=True)
@@ -150,7 +154,7 @@ async def logout():
     """The bot logs out"""
     await bot.say("Logging out.")
     await bot.logout()
-    print("logged out")
+    print("Logged out")
 
 
 bot.loop.create_task(clock())
