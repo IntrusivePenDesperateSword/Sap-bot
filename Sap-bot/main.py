@@ -17,7 +17,7 @@ description = '''A bot for automatic emote replacement, mimicking virtual memory
 
 in_server, out_server = {}, {}
 prefix = "!"
-clock_hours = 1  # /180
+clock_hours = 1/360
 age_length = 16
 bot = commands.Bot(command_prefix=prefix, description=description)
 
@@ -29,16 +29,21 @@ async def on_ready():
 
     temp = await bot.application_info()
     bot.owner = temp.owner
-    await bot.change_presence(game=discord.Game(name=f"for info: {prefix}help"))
+    await bot.change_presence(game=discord.Game(name=f"For info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
 
     in_server = {i.name:{"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
                  for i in bot.get_all_emojis()}
+    with open("emoji.json", "r") as f:
+        file = json.load(f)
+    for i in file.keys():
+        if i in [i.name for i in bot.get_all_emojis()]:
+            in_server[i] = file[i]
+        else:
+            out_server[i] = file[i]
 
     print(in_server)
 
-    with open("emoji.json", "r") as f:
-        out_server = json.load(f)
 
 
 def is_me():
@@ -51,13 +56,16 @@ def is_me():
 @bot.event
 async def on_reaction_add(reaction, user):
     if user != bot.user:
+        if reaction.emoji.name not in in_server.keys():
+            await bot.say("Hecc, how did you manage to use that emoji? You should tell IPDS about this.")
         in_server[reaction.emoji.name]["Referenced"] = 1
+        await save()
 
 
 async def update_age():
-    for key, value in in_server:
-        value["Age"] = str(value["Referenced"]) + value["Age"][:-1]
-        value["Referenced"] = 0
+    for key in in_server.keys():
+        in_server[key]["Age"] = str(in_server[key]["Referenced"]) + in_server[key]["Age"][:-1]
+        in_server[key]["Referenced"] = 0
 
 
 async def clock():
@@ -65,6 +73,7 @@ async def clock():
 
     while not bot.is_closed:
         await update_age()
+        await save()
         await asyncio.sleep(3600 * clock_hours)
 
 
@@ -86,11 +95,13 @@ async def test(ctx):
 
 
 async def save():
-    """Saves unloaded emojis to the file."""
+    """Saves emojis to the file."""
     global out_server
+    global in_server
     with open("emoji.json", "w") as f:
-        json.dump(out_server, f)
+        json.dump({**in_server, **out_server}, f)
     await bot.say("Saved emoji.")
+    print("Saved.")
 
 
 @bot.command()
@@ -98,11 +109,14 @@ async def load():
     """Gets unloaded emojis from the file and loaded from Discord."""
     global out_server
     global in_server
-    in_server = {i.name:{"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
-                 for i in bot.get_all_emojis()}
 
     with open("emoji.json", "r") as f:
-        out_server = json.load(f)
+        file = json.load(f)
+    for i in file.keys():
+        if i in [i.name for i in bot.get_all_emojis()]:
+            in_server[i] = file[i]
+        else:
+            out_server[i] = file[i]
 
     await bot.say("Loaded emoji.")
 
@@ -137,10 +151,11 @@ async def add(emojiname):
         await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
         return emojiname
 
-    for key, value in in_server:
-        if value["Age"] < worst["Age"]:
-            worst = {key: value}
-    await bot.say(f'Removing {worst.keys()[0]}, and adding {emojiname}...')
+    for key in in_server.keys():
+        print(in_server[key])
+        if in_server[key]["Age"] < worst["Age"]:
+            worst = {key: in_server[key]}
+    await bot.say(f'Removing {list(worst.keys())[0]}, and adding {emojiname}...')
 
     in_server[emojiname] = out_server.pop(emojiname)
     out_server[list(worst.keys())[0]] = in_server.pop(list(worst.keys())[0])
@@ -152,13 +167,14 @@ async def add(emojiname):
         async with ses.get(in_server[emojiname]["URL"]) as r:
             img = await r.read()
 
-    await bot.create_custom_emoji(bot.Server, emojiname, img)
+    # await bot.create_custom_emoji(bot.Server, emojiname, img)
 
 
 @bot.command(hidden=True, pass_context=True)
 async def logout(ctx):
     """The bot logs out"""
     if ctx.message.author.id == bot.owner.id:
+        await save()
         await bot.say("Logging out.")
         await bot.logout()
         print("Logged out")
