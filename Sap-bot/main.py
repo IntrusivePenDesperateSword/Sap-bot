@@ -5,6 +5,7 @@ import time
 import json
 import asyncio
 import aiohttp
+import aiofiles
 
 with open("Secret.txt", "r") as f:
     token = f.read()
@@ -17,7 +18,7 @@ description = '''A bot for automatic emote replacement, mimicking virtual memory
 
 in_server, out_server = {}, {}
 prefix = "!"
-clock_hours = 1/360
+clock_hours = 1/60  # Low amount of time for debugging
 age_length = 16
 bot = commands.Bot(command_prefix=prefix, description=description)
 
@@ -34,14 +35,21 @@ async def on_ready():
 
     in_server = {i.name:{"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
                  for i in bot.get_all_emojis()}
+
     with open("emoji.json", "r") as f:
         file = json.load(f)
-    for i in file.keys():
-        if i in [i.name for i in bot.get_all_emojis()]:
-            in_server[i].update(file[i])
-        else:
-            out_server[i].update(file[i])
+    print(file.keys())
 
+    for i in file.keys():
+        if i in [k.name for k in bot.get_all_emojis()]:
+            in_server[i] = file[i]
+        else:
+            out_server[i] = file[i]
+
+    print(out_server)
+    print(in_server)  # Do note these are also equal, for some reason.
+
+    await save()
     print(in_server)
 
 
@@ -100,7 +108,7 @@ async def save():
     global out_server
     global in_server
     with open("emoji.json", "w") as f:
-        json.dump({**in_server, **out_server}, f, indent=2)
+        json.dump({**in_server, **out_server}, indent=4)
     print("Saved.")
 
 
@@ -117,9 +125,9 @@ async def load():
         file = json.load(f)
     for i in file.keys():
         if i in [i.name for i in bot.get_all_emojis()]:
-            in_server[i].update(file[i])
+            in_server[i] = file[i]
         else:
-            out_server[i].update(file[i])
+            out_server[i] = file[i]
 
     await save()
     await bot.say("Loaded emoji.")
