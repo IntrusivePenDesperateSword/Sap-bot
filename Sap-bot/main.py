@@ -72,7 +72,7 @@ async def on_reaction_add(reaction, user):
 
 async def update_age():
     for key in in_server.keys():
-        print(in_server[key]["Referenced"])
+        # print(in_server[key]["Referenced"])
         in_server[key]["Age"] = str(in_server[key]["Referenced"]) + in_server[key]["Age"][:-1]
         in_server[key]["Referenced"] = 0
 
@@ -134,54 +134,55 @@ async def load():
 
 
 @bot.command(pass_context=True)
-async def unload(ctx, emojiname):
+async def unload(ctx, *emojinames):
     """Puts an emoji in the server, out of it. For debugging."""
     global out_server
     global in_server
+    for emojiname in emojinames:
+        if emojiname not in in_server.keys():
+            await bot.say(f"The emoji {emojiname} didn't appear to be loaded. maybe you misspelled?")
+            continue
 
-    if emojiname not in in_server.keys():
-        await bot.say("The emoji didn't appear to be loaded. Misspelled?")
-        return -1
+        out_server[emojiname] = in_server.pop(emojiname)
 
-    out_server[emojiname] = in_server.pop(emojiname)
+        await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=emojiname))
 
-    await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=emojiname))
-
-    await bot.say(f"{emojiname} switched out successfully.")
+        await bot.say(f"{emojiname} switched out successfully.")
     await save()
 
 
 @bot.command(pass_context=True)
-async def add(ctx, emojiname):
+async def add(ctx, *emojinames):
     """Loads the requested emoji, and unloads one that hasn't been used in a while."""
-    worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
-    if emojiname in in_server.keys():
-        await bot.say(f"The emoji {emojiname} is already loaded.")
-        return emojiname
+    for emojiname in emojinames:
+        worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
+        if emojiname in in_server.keys():
+            await bot.say(f"The emoji {emojiname} is already loaded.")
+            return emojiname
 
-    if emojiname not in out_server.keys():
-        await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
-        return emojiname
+        if emojiname not in out_server.keys():
+            await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
+            return emojiname
 
-    print(worst.keys(), "worst" in worst.keys())
-    print(worst["worst"])
+        print(worst.keys(), "worst" in worst.keys())
+        print(worst["worst"])
 
-    for key in in_server.keys():
-        print(worst)
-        if in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
-            worst = {key: in_server[key]}
-    await bot.say(f'Removing {list(worst.keys())[0]}, and adding {emojiname}...')
+        for key in in_server.keys():
+            print(worst)
+            if in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
+                worst = {key: in_server[key]}
+        await bot.say(f'Removing {list(worst.keys())[0]}, and adding {emojiname}...')
 
-    in_server[emojiname] = out_server.pop(emojiname)
-    out_server[list(worst.keys())[0]] = in_server.pop(list(worst.keys())[0])
+        in_server[emojiname] = out_server.pop(emojiname)
+        out_server[list(worst.keys())[0]] = in_server.pop(list(worst.keys())[0])
 
-    await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=list(worst.keys())[0]))
+        await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=list(worst.keys())[0]))
 
-    async with aiohttp.ClientSession() as ses:
-        async with ses.get(in_server[emojiname]["URL"]) as r:
-            img = await r.read()
-    print(len([ctx.message.server, emojiname, img]))
-    await bot.create_custom_emoji(server=ctx.message.server, name=emojiname, image=img)
+        async with aiohttp.ClientSession() as ses:
+            async with ses.get(in_server[emojiname]["URL"]) as r:
+                img = await r.read()
+        print(len([ctx.message.server, emojiname, img]))
+        await bot.create_custom_emoji(server=ctx.message.server, name=emojiname, image=img)
 
     await save()
 
