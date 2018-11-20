@@ -36,8 +36,8 @@ async def on_ready():
     in_server = {i.name:{"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
                  for i in bot.get_all_emojis()}
 
-    with open("emoji.json", "r") as f:
-        file = json.load(f)
+    with open("emoji.json", "r") as j:
+        file = json.load(j)
     print(file.keys())
 
     online_keys = bot.get_all_emojis()
@@ -141,11 +141,12 @@ async def unload(ctx, *emojinames):
     global in_server
     for emojiname in emojinames:
         if emojiname not in in_server.keys():
-            await bot.say(f"The emoji {emojiname} didn't appear to be loaded. maybe you misspelled?")
+            await bot.say(f"The emoji {emojiname} didn't appear to be loaded. Maybe you misspelled?")
             continue
         if emojiname in out_server.keys():
-            await bot.say(f"{emojiname} is already unloaded")
+            await bot.say(f"{emojiname} is already unloaded.")
             continue
+
         out_server[emojiname] = in_server.pop(emojiname)
 
         await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=emojiname))
@@ -167,11 +168,7 @@ async def add(ctx, *emojinames):
             await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
             return emojiname
 
-        print(worst.keys(), "worst" in worst.keys())
-        print(worst["worst"])
-
         for key in in_server.keys():
-            print(worst)
             if in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
                 worst = {key: in_server[key]}
         await bot.say(f'Removing {list(worst.keys())[0]}, and adding {emojiname}...')
