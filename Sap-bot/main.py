@@ -38,7 +38,7 @@ async def on_ready():
 
     with open("emoji.json", "r") as j:
         file = json.load(j)
-    print(file.keys())
+    print(file)
 
     online_keys = bot.get_all_emojis()
     for i in file.keys():
@@ -47,8 +47,7 @@ async def on_ready():
         else:
             out_server[i] = file[i]
 
-    print(out_server)
-    print(in_server)  # Do note these are also equal, for some reason.
+    print(in_server)
 
     await save()
     print(in_server)
