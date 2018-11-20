@@ -142,7 +142,9 @@ async def unload(ctx, *emojinames):
         if emojiname not in in_server.keys():
             await bot.say(f"The emoji {emojiname} didn't appear to be loaded. maybe you misspelled?")
             continue
-
+        if emojiname in out_server.keys():
+            await bot.say(f"{emojiname} is already unloaded")
+            continue
         out_server[emojiname] = in_server.pop(emojiname)
 
         await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=emojiname))
