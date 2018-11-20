@@ -40,8 +40,9 @@ async def on_ready():
         file = json.load(f)
     print(file.keys())
 
+    online_keys = bot.get_all_emojis()
     for i in file.keys():
-        if i in [k.name for k in bot.get_all_emojis()]:
+        if i in [k.name for k in online_keys]:
             in_server[i] = file[i]
         else:
             out_server[i] = file[i]
