@@ -54,20 +54,20 @@ async def on_ready():
     print(in_server)
 
 
-async def emoji_permission(ctx):
+def emoji_permission(ctx):
     channel = ctx.channel
     user = ctx.message.author
-    permissions = await channel.permissions_for(user)
-    if not permissions.manage_emojis:
-        bot.send_message(channel, f"sorry {user.display_name}, you can't manage emojis")
+    permissions = user.permissions_in(channel)
+    # if not permissions.manage_emojis:
+    #     bot.send_message(channel, f"sorry {user.display_name}, you can't manage emojis")
     return permissions.manage_emojis
 
 
 def is_owner(ctx):
     user = ctx.message.author
-    if not user.id == bot.owner.id:
-        bot.send_message(ctx.message.channel,
-                         f"sorry {user.display_name}, but this command is only for {bot.owner.display_name}")
+    # if not user.id == bot.owner.id:
+    #     bot.send_message(ctx.message.channel,
+    #                      f"sorry {user.display_name}, but this command is only for {bot.owner.display_name}")
     return user.id == bot.owner.id
 
 
