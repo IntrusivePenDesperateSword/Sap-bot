@@ -178,20 +178,21 @@ async def add(ctx, *emojinames):
             await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
             continue
 
-        for key in in_server.keys():
-            if in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
-                worst = {key: in_server[key]}
-        await bot.say(f'Removing {list(worst.keys())[0]}, and adding {emojiname}...')
+        if len([i for i in bot.get_all_emojis()]) < 49:
+            for key in in_server.keys():
+                if in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
+                    worst = {key: in_server[key]}
+            await bot.say(f'Removing {list(worst.keys())[0]}, and adding {emojiname}...')
 
-        in_server[emojiname] = out_server.pop(emojiname)
-        out_server[list(worst.keys())[0]] = in_server.pop(list(worst.keys())[0])
+            in_server[emojiname] = out_server.pop(emojiname)
+            out_server[list(worst.keys())[0]] = in_server.pop(list(worst.keys())[0])
 
-        await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=list(worst.keys())[0]))
+            await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=list(worst.keys())[0]))
 
         async with aiohttp.ClientSession() as ses:
             async with ses.get(in_server[emojiname]["URL"]) as r:
                 img = await r.read()
-        print(len([ctx.message.server, emojiname, img]))
+
         await bot.create_custom_emoji(server=ctx.message.server, name=emojiname, image=img)
 
     await save()
