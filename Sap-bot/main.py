@@ -166,7 +166,6 @@ async def unload(ctx, *emojinames):
 
 
 @bot.command(pass_context=True)
-@commands.check(emoji_permission)
 async def add(ctx, *emojinames):
     """Loads the requested emoji, and unloads one that hasn't been used in a while."""
     for emojiname in emojinames:
