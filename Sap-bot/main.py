@@ -54,12 +54,21 @@ async def on_ready():
     print(in_server)
 
 
+async def emoji_permission(ctx):
+    channel = ctx.channel
+    user = ctx.message.author
+    permissions = await channel.permissions_for(user)
+    if (not permissions.manage_emojis):
+        bot.send_message(channel, f"sorry {user.display_name}, you can't manage emojis")
+    return permissions.manage_emojis
 
-def is_me():
-    def predicate(ctx):
-        return ctx.message.author.id == bot.owner.id
 
-    return commands.check(predicate)
+async def is_owner(ctx):
+    user = ctx.message.author
+    if (not user.id == bot.owner.id):
+        bot.send_message(ctx.message.channel,
+                         f"sorry {user.display_name}, but this command is only for {bot.owner.display_name}")
+    return user.id == bot.owner.id
 
 
 @bot.event
@@ -135,6 +144,7 @@ async def load():
 
 
 @bot.command(pass_context=True)
+@commands.check(emoji_permission)
 async def unload(ctx, *emojinames):
     """Puts an emoji in the server, out of it. For debugging."""
     global out_server
@@ -156,6 +166,7 @@ async def unload(ctx, *emojinames):
 
 
 @bot.command(pass_context=True)
+@commands.check(emoji_permission)
 async def add(ctx, *emojinames):
     """Loads the requested emoji, and unloads one that hasn't been used in a while."""
     for emojiname in emojinames:
@@ -188,15 +199,13 @@ async def add(ctx, *emojinames):
 
 
 @bot.command(hidden=True, pass_context=True)
+@commands.check(is_owner)
 async def logout(ctx):
     """The bot logs out"""
-    if ctx.message.author.id == bot.owner.id:
-        await save()
-        await bot.say("Logging out.")
-        await bot.logout()
-        print("Logged out")
-    else:
-        await bot.say("This command is reserved for the bot's owner, IntrusivePenDesperateSword. If you want me dead so bad, ask him.")
+    await save()
+    await bot.say("Logging out.")
+    await bot.logout()
+    print("Logged out")
 
 
 bot.loop.create_task(clock())
