@@ -162,11 +162,11 @@ async def add(ctx, *emojinames):
         worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
         if emojiname in in_server.keys():
             await bot.say(f"The emoji {emojiname} is already loaded.")
-            return emojiname
+            continue
 
         if emojiname not in out_server.keys():
             await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
-            return emojiname
+            continue
 
         for key in in_server.keys():
             if in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
