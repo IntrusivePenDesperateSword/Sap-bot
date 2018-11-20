@@ -108,7 +108,7 @@ async def save():
     global out_server
     global in_server
     with open("emoji.json", "w") as f:
-        json.dump({**in_server, **out_server}, indent=4)
+        json.dump({**in_server, **out_server}, f, indent=4)
     print("Saved.")
 
 
