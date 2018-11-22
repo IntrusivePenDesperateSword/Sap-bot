@@ -19,6 +19,7 @@ prefix = "!"
 clock_hours = 1/60  # Low amount of time for debugging
 age_length = 16
 bot = commands.Bot(command_prefix=prefix, description=description)
+bot.servers = [bot.get_server(i) for i in [512170400495435777]]
 
 bot.in_server = {}
 bot.out_server = {}
@@ -26,7 +27,7 @@ bot.out_server = {}
 bot.in_server = {i.name: {"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
                  for i in bot.get_all_emojis()}
 
-with open("emoji.json", "r") as f:
+with open("emojiTest.json", "r") as f:
     bot.file = json.load(f)
 
 
@@ -65,6 +66,11 @@ def is_owner(ctx):
 
 
 @bot.event
+async def on_server_emojis_update(before, after):
+    pass
+
+
+@bot.event
 async def on_reaction_add(reaction, user):
     if user != bot.user and reaction.custom_emoji:
         if reaction.emoji.name not in bot.in_server.keys() :
@@ -78,6 +84,18 @@ async def update_age():
         # print(bot.in_server[key]["Referenced"])
         bot.in_server[key]["Age"] = str(bot.in_server[key]["Referenced"]) + bot.in_server[key]["Age"][:-1]
         bot.in_server[key]["Referenced"] = 0
+
+
+async def scan_logs():
+    temp = list(bot.in_server.keys())
+    for server in bot.servers:
+        for channel in server.channels:
+            for message in bot.logs_from(channel, limit=200, after=):
+                for emo in temp:
+                    if emo in message.content:
+                        bot.in_server[emo]["Referenced"] = 1
+                        temp.pop(temp.index(emo))
+                        continue
 
 
 async def clock():
@@ -109,7 +127,7 @@ async def test(ctx):
 
 async def save():
     """Saves emojis to the file."""
-    with open("emoji.json", "w") as f:
+    with open("emojiTest.json", "w") as f:
         json.dump({**bot.in_server, **bot.out_server}, f, indent=4)
     print("Saved.")
 
@@ -119,7 +137,7 @@ async def load():
     bot.in_server = {i.name: {"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
                      for i in bot.get_all_emojis()}
 
-    with open("emoji.json", "r") as f:
+    with open("emojiTest.json", "r") as f:
         bot.file = json.load(f)
 
     for i in bot.file.keys():
