@@ -16,27 +16,18 @@ if not token:
 description = '''A bot for automatic emote replacement, mimicking virtual memory. Somewhat by IntrusivePenDesperateSword#7881.'''
 
 prefix = "!"
-clock_hours = 1/180  # Low amount of time for debugging
+clock_hours = 1/60  # Low amount of time for debugging
 age_length = 16
 bot = commands.Bot(command_prefix=prefix, description=description)
 
 bot.in_server = {}
 bot.out_server = {}
 
-with open("emoji.json", "r") as j:
-    bot.file = json.load(j)
-print(bot.file)
-
-bot.in_server = {i.name:{"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
+bot.in_server = {i.name: {"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
                  for i in bot.get_all_emojis()}
 
-online_keys = bot.get_all_emojis()
-for i in bot.file.keys():
-    if i in [k.name for k in online_keys]:
-        bot.in_server[i] = bot.file[i]
-    else:
-        bot.out_server[i] = bot.file[i]
-
+with open("emoji.json", "r") as f:
+    bot.file = json.load(f)
 
 
 @bot.event
@@ -46,13 +37,22 @@ async def on_ready():
     await bot.change_presence(game=discord.Game(name=f"For info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
 
+    for i in bot.file.keys():
+        if i in [i.name for i in bot.get_all_emojis()]:
+            bot.in_server[i] = bot.file[i]
+        else:
+            bot.out_server[i] = bot.file[i]
+
+    print((list(bot.in_server.keys()), list(bot.out_server.keys()), bot.file, [i.name for i in bot.get_all_emojis()]))
+    await save()
+
 
 def emoji_permission(ctx):
     channel = ctx.message.channel
     user = ctx.message.author
     permissions = user.permissions_in(channel)
     # if not permissions.manage_emojis:
-    #     bot.send_message(channel, f"sorry {user.display_name}, you can't manage emojis")
+    #     bot.send_message(channel, f"Sorry {user.display_name}, you can't manage emojis")
     return permissions.manage_emojis
 
 
@@ -101,7 +101,9 @@ async def ping():
 @bot.command(pass_context=True)
 async def test(ctx):
     """Reacts with all emojis in the server"""
+    print({i.name:i.id for i in bot.get_all_emojis()})
     for key, value in bot.in_server.items():  # bot.in_server.keys()
+        print(f'{key}:{value["Emoji"]}')
         await bot.add_reaction(ctx.message, f'{key}:{value["Emoji"]}')
         await asyncio.sleep(0.1)
 
@@ -113,12 +115,10 @@ async def save():
     print("Saved.")
 
 
-@bot.command()
 async def load():
     """Gets unloaded emojis from the file and loaded from Discord."""
-
-    bot.in_server = {i.name:{"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
-                 for i in bot.get_all_emojis()}
+    bot.in_server = {i.name: {"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
+                     for i in bot.get_all_emojis()}
 
     with open("emoji.json", "r") as f:
         bot.file = json.load(f)
@@ -130,8 +130,6 @@ async def load():
             bot.out_server[i] = bot.file[i]
 
     await save()
-    await bot.say("Loaded emoji.")
-
 
 @bot.command(pass_context=True)
 @commands.check(emoji_permission)
@@ -157,31 +155,33 @@ async def unload(ctx, *emojinames):
 async def add(ctx, *emojinames):
     """Loads the requested emoji, and unloads one that hasn't been used in a while."""
     for emojiname in emojinames:
-        worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
-        if emojiname in bot.in_server.keys():
-            await bot.say(f"The emoji {emojiname} is already loaded.")
-            continue
+        if len([i for i in bot.get_all_emojis()]) > 48:
+            worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
+            if emojiname in bot.in_server.keys():
+                await bot.say(f"The emoji {emojiname} is already loaded.")
+                continue
 
-        if emojiname not in bot.out_server.keys():
-            await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
-            continue
+            if emojiname not in bot.out_server.keys():
+                await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
+                continue
 
-        if len([i for i in bot.get_all_emojis()]) < 49:
-            for key in bot.in_server.keys():
-                if bot.in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
-                    worst = {key: bot.in_server[key]}
-            await bot.say(f'Removing {list(worst.keys())[0]}, and adding {emojiname}...')
+            if len([i for i in bot.get_all_emojis()]) < 49:
+                for key in bot.in_server.keys():
+                    if bot.in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
+                        worst = {key: bot.in_server[key]}
+                await bot.say(f'Removing {list(worst.keys())[0]}, and adding {emojiname}...')
 
-            bot.in_server[emojiname] = bot.out_server.pop(emojiname)
             bot.out_server[list(worst.keys())[0]] = bot.in_server.pop(list(worst.keys())[0])
 
             await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=list(worst.keys())[0]))
 
         async with aiohttp.ClientSession() as ses:
-            async with ses.get(bot.in_server[emojiname]["URL"]) as r:
+            async with ses.get(bot.out_server[emojiname]["URL"]) as r:
                 img = await r.read()
 
-        await bot.create_custom_emoji(server=ctx.message.server, name=emojiname, image=img)
+        temp = await bot.create_custom_emoji(server=ctx.message.server, name=emojiname, image=img)
+        prev = bot.out_server.pop(emojiname)
+        bot.in_server[emojiname] = {"Emoji": temp.id, "URL": temp.url, "Age": prev["Age"], "Referenced": 0}
 
     await save()
 
