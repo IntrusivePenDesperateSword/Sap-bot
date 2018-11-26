@@ -23,15 +23,13 @@ bot = commands.Bot(command_prefix=prefix, description=description)
 
 bot.time = datetime.datetime.now()
 
-bot.in_server = {i.id: {} for i in bot.servers}
-bot.out_server = {i.id: {} for i in bot.servers}
+bot.in_server = {i.id: {} for i in list(bot.servers)}
+bot.out_server = {i.id: {} for i in list(bot.servers)}
 
 bot.files = []
 with open("emojiTest.json", "r") as f:
     bot.testFile = json.load(f)
     bot.files.append((bot.testFile, "emojiTest.json"))
-
-
 
 
 @bot.event
@@ -41,19 +39,20 @@ async def on_ready():
     await bot.change_presence(game=discord.Game(name=f"For info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
 
-    bot.servers = [bot.get_server(i) for i in ["512170400495435777"]]
+    print(list(bot.servers))
 
     bot.in_server = {j.id: {i.name: {"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
-                 for i in bot.get_all_emojis() if i.server.id == j.id} for j in bot.servers}
+                 for i in bot.get_all_emojis() if i.server.id == j.id} for j in list(bot.servers)}
 
-    for h in range(len(bot.servers)):
+    for h in range(len(list(bot.servers))):
         for i in bot.testFile.keys():
-            if i in [j.name for j in bot.get_all_emojis() if j.server.id == bot.servers[h].id]:
-                bot.in_server[bot.servers[h].id][i] = bot.testFile[i]
+            if i in [j.name for j in bot.get_all_emojis() if j.server.id == list(bot.servers)[h].id]:
+                bot.in_server[list(bot.servers)[h].id][i] = bot.testFile[i]
             else:
-                bot.out_server[bot.servers[h].id][i] = bot.testFile[i]
+                bot.out_server[list(bot.servers)[h].id][i] = bot.testFile[i]
 
-    print((list(bot.in_server.keys()), list(bot.out_server.keys()), bot.testFile, [i.name for i in bot.get_all_emojis()]))
+    print((list(bot.in_server.keys()), list(bot.out_server.keys())))
+    print(list(bot.in_server[bot.servers[0].id].keys()))
     await save()
 
 
@@ -97,7 +96,7 @@ async def update_age():
 
 async def scan_logs(time):
     temp = list(bot.in_server.keys())
-    for server in bot.servers:
+    for server in list(bot.servers):
         for channel in server.channels:
             for message in bot.logs_from(channel, limit=200, after=time):
                 for emo in temp:
@@ -138,8 +137,9 @@ async def save():
     """Saves emojis to the testFile."""
     for i in range(len(bot.files)):
         with open(bot.files[i][1], "w") as f:
-            json.dump({**bot.in_server[bot.servers[i].id], **bot.out_server[bot.servers[i].id]}, f, indent=4)
+            json.dump({**bot.in_server[list(bot.servers)[i].id], **bot.out_server[list(bot.servers)[i].id]}, f, indent=4)
     print("Saved.")
+    print(f"Currently in servers {[i.name for i in list(bot.servers)]}")
 
 
 """async def load():
