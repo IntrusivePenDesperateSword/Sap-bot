@@ -179,7 +179,7 @@ async def emojilist(ctx):
     await bot.say(message)
 
 
-@bot.commands(pass_context=True)
+@bot.command(pass_context=True)
 @commands.check(emoji_permission)
 async def delete(ctx, emojiname: str):
     """Removes the emoji from storage"""
@@ -191,7 +191,7 @@ async def delete(ctx, emojiname: str):
         bot.out_server.pop(emojiname)
         bot.say(f"deleted {emojiname} from storage")
     else:
-        bot.say(f"I can't find an emoji named {emojiname} anywhere, sorry")
+        bot.say(f"The emoji {emojiname} could not be found.")
 
 
 @bot.command()
