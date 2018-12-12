@@ -109,61 +109,9 @@ async def clock():
         await asyncio.sleep(3600 * clock_hours)
 
 
-@bot.command()
-async def ping():
-    """Shows how long the delay is"""
-    time_1 = time.perf_counter()
-    await bot.type()
-    time_2 = time.perf_counter()
-    await bot.say(f"{round((time_2 - time_1) * 1000)} ms")
-
-
-@bot.command(pass_context=True)
-async def test(ctx):
-    """Reacts with all emojis in the server"""
-    for key, value in bot.in_server.items():  # bot.in_server.keys()
-        await bot.add_reaction(ctx.message, f'{key}:{value["Emoji"]}')
-        await asyncio.sleep(0.1)
-
-
-async def save():
-    """Saves emojis to the testFile."""
-    with open("emojiTest.json", "w") as f:
-        json.dump({**bot.in_server, **bot.out_server}, f, indent=4)
-    print("Saved.")
-
-
-@bot.command(pass_context=True)
-async def emojilist(ctx):
-    """Has the bot list the emojis not currently in the server, available for loading."""
-    message = f"```{', '.join(list(bot.out_server.keys()))}```"
-    if len(message) > 2000:
-        message = f"{message[:1995]}...```"
-    await bot.say(message)
-
-@bot.command(pass_context=True)
-@commands.check(emoji_permission)
-async def unload(ctx, *emojinames):
-    """Puts an emoji in the server, out of it. For debugging."""
-    for emojiname in emojinames:
-        if emojiname not in bot.in_server.keys():
-            await bot.say(f"The emoji {emojiname} didn't appear to be loaded. Maybe you misspelled?")
-            continue
-        if emojiname in bot.out_server.keys():
-            await bot.say(f"{emojiname} is already unloaded.")
-            continue
-
-        bot.out_server[emojiname] = bot.in_server.pop(emojiname)
-
-        await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=emojiname))
-
-        await bot.say(f"{emojiname} switched out successfully.")
-    await save()
-
-
 @bot.command(pass_context=True)
 async def add(ctx, *emojinames):
-    """Loads the requested emojis, and unloads ones that haven't been used in a while."""
+    """Loads the requested emojis and unloads unused ones."""
     server_id = ctx.message.server.id
     for emojiname in emojinames:
         if emojiname in bot.in_server.keys():
@@ -194,6 +142,59 @@ async def add(ctx, *emojinames):
         prev = bot.out_server.pop(emojiname)
         bot.in_server[emojiname] = {"Emoji": temp.id, "URL": temp.url, "Age": prev["Age"], "Referenced": 0}
 
+    await save()
+
+
+@bot.command(pass_context=True)
+async def emojilist(ctx):
+    """Lists the emojis not in the server, available for loading."""
+    message = f"```{', '.join(list(bot.out_server.keys()))}```" if len(bot.out_server) > 0 else "There are no emojis not in the server!"
+    if len(message) > 2000:
+        message = f"{message[:1995]}...```"
+    await bot.say(message)
+
+
+@bot.command()
+async def ping():
+    """Shows how long the delay is"""
+    time_1 = time.perf_counter()
+    await bot.type()
+    time_2 = time.perf_counter()
+    await bot.say(f"{round((time_2 - time_1) * 1000)} ms")
+
+
+@bot.command(pass_context=True)
+async def test(ctx):
+    """Reacts with all emojis in the server"""
+    for key, value in bot.in_server.items():  # bot.in_server.keys()
+        await bot.add_reaction(ctx.message, f'{key}:{value["Emoji"]}')
+        await asyncio.sleep(0.1)
+
+
+async def save():
+    """Saves emojis to the testFile."""
+    with open("emojiTest.json", "w") as f:
+        json.dump({**bot.in_server, **bot.out_server}, f, indent=4)
+    print("Saved.")
+
+
+@bot.command(pass_context=True, hidden=True)
+@commands.check(emoji_permission)
+async def unload(ctx, *emojinames):
+    """Puts an emoji in the server, out of it. For debugging."""
+    for emojiname in emojinames:
+        if emojiname not in bot.in_server.keys():
+            await bot.say(f"The emoji {emojiname} didn't appear to be loaded. Maybe you misspelled?")
+            continue
+        if emojiname in bot.out_server.keys():
+            await bot.say(f"{emojiname} is already unloaded.")
+            continue
+
+        bot.out_server[emojiname] = bot.in_server.pop(emojiname)
+
+        await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=emojiname))
+
+        await bot.say(f"{emojiname} switched out successfully.")
     await save()
 
 
