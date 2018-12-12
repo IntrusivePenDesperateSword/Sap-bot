@@ -186,7 +186,7 @@ async def test(ctx):
     """Reacts with all emojis in the server"""
     for key, value in bot.in_server.items():
         await bot.add_reaction(ctx.message, f'{key}:{value["Emoji"]}')
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.2)
 
 
 async def save():
