@@ -21,7 +21,7 @@ clock_hours = 1/60  # Low amount of time for debugging
 age_length = 16
 bot = commands.Bot(command_prefix=prefix, description=description)
 
-bot.time = datetime.datetime.now()
+bot.time = datetime.datetime.utcnow()
 
 bot.in_server = {}
 bot.out_server = {}
@@ -104,30 +104,25 @@ async def on_reaction_add(reaction, user):
         bot.in_server[reaction.emoji.name]["Referenced"] = 1
 
 
+@bot.event
+async def on_message(message):
+    for emote in list(bot.in_server.keys()):
+        if f"<:{emote}:{bot.in_server[emote]['Emoji']}>" in message.content:
+            bot.in_server[emote]["Referenced"] = 1
+
+    await bot.process_commands(message)
+
+
 async def update_age():
     for key in bot.in_server.keys():
         bot.in_server[key]["Age"] = str(bot.in_server[key]["Referenced"]) + bot.in_server[key]["Age"][:-1]
         bot.in_server[key]["Referenced"] = 0
 
 
-async def scan_logs(time):
-    temp = list(bot.in_server.keys())
-    for channel in list(bot.servers)[0].channels:
-        logs = bot.logs_from(channel, limit=200, after=time)
-        print(logs)
-        for message in logs:
-            for emo in temp:
-                if emo in message.content:
-                    bot.in_server[emo]["Referenced"] = 1
-                    temp.pop(temp.index(emo))
-
-
 async def clock():
     await bot.wait_until_ready()
 
     while not bot.is_closed:
-        #await scan_logs(bot.time)
-        bot.time = datetime.datetime.now()
         await update_age()
         await save()
         await asyncio.sleep(3600 * clock_hours)
@@ -136,7 +131,6 @@ async def clock():
 @bot.command(pass_context=True)
 async def add(ctx, *emojinames):
     """Loads the requested emojis and unloads unused ones."""
-    server_id = ctx.message.server.id
     for emojiname in emojinames:
         if emojiname in bot.in_server.keys():
             await bot.say(f"The emoji {emojiname} is already loaded.")
@@ -145,7 +139,7 @@ async def add(ctx, *emojinames):
             await bot.say(f"The emoji {emojiname} is not an unloaded emoji! Did you spell it correctly?")
             continue
 
-        if len([i for i in bot.get_all_emojis()]) > 48:
+        if len(list(bot.in_server.keys())) > 48:
             worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
             for key in bot.in_server.keys():
                 if bot.in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
@@ -187,10 +181,10 @@ async def ping():
     await bot.say(f"{round((time_2 - time_1) * 1000)} ms")
 
 
-@bot.command(pass_context=True)
+@bot.command(pass_context=True, hidden=True)
 async def test(ctx):
     """Reacts with all emojis in the server"""
-    for key, value in bot.in_server.items():  # bot.in_server.keys()
+    for key, value in bot.in_server.items():
         await bot.add_reaction(ctx.message, f'{key}:{value["Emoji"]}')
         await asyncio.sleep(0.1)
 
@@ -227,7 +221,6 @@ async def unload(ctx, *emojinames):
 async def logout(ctx):
     """The bot logs out"""
     await save()
-    #await bot.say("Logging out.")
     await bot.send_message(ctx.message.channel, "Logging out.")
     await bot.logout()
     print("Logged out")
