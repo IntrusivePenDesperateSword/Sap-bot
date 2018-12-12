@@ -179,7 +179,7 @@ async def emojilist(ctx):
     await bot.say(message)
 
 
-@bot.commands(pass_context=True)
+@bot.command(pass_context=True)
 @commands.check(emoji_permission)
 async def delete(ctx, emojiname: str):
     """Removes the emoji from storage"""
