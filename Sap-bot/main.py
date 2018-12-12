@@ -70,7 +70,7 @@ def is_owner(ctx):
 async def on_server_emojis_update(before, after):
     new = ""
     for emoji in after:
-        if emoji not in before:
+        if emoji not in before and emoji.name not in list(bot.in_server.keys()):
             new = emoji
             bot.in_server[new.name] = {"Emoji": new.id, "URL": new.url, "Age": "0" * age_length, "Referenced": 0}
             print(f"Added the new emoji {new.name}.")
@@ -78,7 +78,7 @@ async def on_server_emojis_update(before, after):
     else:
         gone = ""
         for emoji in before:
-            if emoji not in after:
+            if emoji not in after and emoji not in list(bot.out_server.keys()):
                 gone = emoji
                 print(f"Emoji {gone.name} is gone forever.")
                 break
@@ -227,7 +227,8 @@ async def unload(ctx, *emojinames):
 async def logout(ctx):
     """The bot logs out"""
     await save()
-    await bot.say("Logging out.")
+    #await bot.say("Logging out.")
+    await bot.send_message(ctx.message.channel, "Logging out.")
     await bot.logout()
     print("Logged out")
 
