@@ -80,8 +80,7 @@ async def on_server_emojis_update(before, after):
         for emoji in before:
             if emoji not in after:
                 gone = emoji
-                bot.out_server[gone.name] = bot.in_server.pop(gone.name)
-                print(f"Removed the deleted emoji {gone.name}.")
+                print(f"Emoji {gone.name} is gone forever.")
                 break
 
 
@@ -127,7 +126,7 @@ async def clock():
     await bot.wait_until_ready()
 
     while not bot.is_closed:
-        await scan_logs(bot.time)
+        #await scan_logs(bot.time)
         bot.time = datetime.datetime.now()
         await update_age()
         await save()
@@ -177,21 +176,6 @@ async def emojilist(ctx):
     if len(message) > 2000:
         message = f"{message[:1995]}...```"
     await bot.say(message)
-
-
-@bot.command(pass_context=True)
-@commands.check(emoji_permission)
-async def delete(ctx, emojiname: str):
-    """Removes the emoji from storage"""
-    if emojiname in bot.in_server.keys():
-        bot.in_server.pop(emojiname)
-        await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=emojiname))
-        await bot.say(f"deleted {emojiname} from the server")
-    elif emojiname in bot.out_server.keys():
-        bot.out_server.pop(emojiname)
-        bot.say(f"deleted {emojiname} from storage")
-    else:
-        bot.say(f"The emoji {emojiname} could not be found.")
 
 
 @bot.command()
