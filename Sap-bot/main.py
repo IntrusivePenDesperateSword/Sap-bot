@@ -68,8 +68,33 @@ def is_owner(ctx):
 
 @bot.event
 async def on_server_emojis_update(before, after):
-    pass
+    new = ""
+    for emoji in after:
+        if emoji not in before:
+            new = emoji
+            bot.in_server[new.name] = {"Emoji": new.id, "URL": new.url, "Age": "0" * age_length, "Referenced": 0}
+            print(f"Added the new emoji {new.name}.")
+            break
+    else:
+        gone = ""
+        for emoji in before:
+            if emoji not in after:
+                gone = emoji
+                bot.out_server[gone.name] = bot.in_server.pop(gone.name)
+                print(f"Removed the deleted emoji {gone.name}.")
+                break
 
+
+    if len([i for i in bot.get_all_emojis()]) > 48:
+        worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
+        for key in bot.in_server.keys():
+            if bot.in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
+                worst = {key: bot.in_server[key]}
+        await bot.say(f'Removing {list(worst.keys())[0]}, since {new.name} was added...')
+
+        bot.out_server[list(worst.keys())[0]] = bot.in_server.pop(list(worst.keys())[0])
+
+        await bot.delete_custom_emoji(discord.utils.get(new.server.emojis, name=list(worst.keys())[0]))
 
 @bot.event
 async def on_reaction_add(reaction, user):
