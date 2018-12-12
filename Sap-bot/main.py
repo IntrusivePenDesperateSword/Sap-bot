@@ -121,7 +121,7 @@ async def ping():
 @bot.command(pass_context=True)
 async def test(ctx):
     """Reacts with all emojis in the server"""
-    for key, value in bot.in_server[ctx.message.server.id].items():  # bot.in_server.keys()
+    for key, value in bot.in_server.items():  # bot.in_server.keys()
         await bot.add_reaction(ctx.message, f'{key}:{value["Emoji"]}')
         await asyncio.sleep(0.1)
 
@@ -132,6 +132,14 @@ async def save():
         json.dump({**bot.in_server, **bot.out_server}, f, indent=4)
     print("Saved.")
 
+
+@bot.command(pass_context=True)
+async def emojilist(ctx):
+    """Has the bot list the emojis not currently in the server, available for loading."""
+    message = f"```{', '.join(list(bot.out_server.keys()))}```"
+    if len(message) > 2000:
+        message = f"{message[:1995]}...```"
+    await bot.say(message)
 
 @bot.command(pass_context=True)
 @commands.check(emoji_permission)
