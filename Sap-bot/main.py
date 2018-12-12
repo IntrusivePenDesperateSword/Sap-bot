@@ -179,6 +179,21 @@ async def emojilist(ctx):
     await bot.say(message)
 
 
+@bot.commands(pass_context=True)
+@commands.check(emoji_permission)
+async def delete(ctx, emojiname: str):
+    """Removes the emoji from storage"""
+    if emojiname in bot.in_server.keys():
+        bot.in_server.pop(emojiname)
+        await bot.delete_custom_emoji(discord.utils.get(ctx.message.server.emojis, name=emojiname))
+        await bot.say(f"deleted {emojiname} from the server")
+    elif emojiname in bot.out_server.keys():
+        bot.out_server.pop(emojiname)
+        bot.say(f"deleted {emojiname} from storage")
+    else:
+        bot.say(f"I can't find an emoji named {emojiname} anywhere, sorry")
+
+
 @bot.command()
 async def ping():
     """Shows how long the delay is"""
