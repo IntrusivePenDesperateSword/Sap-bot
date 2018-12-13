@@ -5,7 +5,6 @@ import time
 import json
 import asyncio
 import aiohttp
-import datetime
 
 with open("Secret.txt", "r") as f:
     token = f.read()
@@ -21,8 +20,6 @@ clock_hours = 1/60  # Low amount of time for debugging
 age_length = 16
 bot = commands.Bot(command_prefix=prefix, description=description)
 
-bot.time = datetime.datetime.utcnow()
-
 bot.in_server = {}
 bot.out_server = {}
 
@@ -36,11 +33,13 @@ async def on_ready():
     await bot.change_presence(game=discord.Game(name=f"For info: {prefix}help"))
     print(f'Logged in as: \n{bot.user.name}\n{bot.user.id}\nwith {bot.owner.display_name} as owner\n------')
 
+    emojis = bot.get_all_emojis()
+
     bot.in_server = {i.name: {"Emoji": i.id, "URL": i.url, "Age": "0" * age_length, "Referenced": 0}
-                 for i in bot.get_all_emojis()}
+                 for i in emojis}
 
     for i in bot.testFile.keys():
-        if i in [j.name for j in bot.get_all_emojis()]:
+        if i in [j.name for j in emojis]:
             bot.in_server[i] = bot.testFile[i]
         else:
             bot.out_server[i] = bot.testFile[i]
@@ -72,19 +71,17 @@ async def on_server_emojis_update(before, after):
     for emoji in after:
         if emoji not in before and emoji.name not in list(bot.in_server.keys()):
             new = emoji
-            bot.in_server[new.name] = {"Emoji": new.id, "URL": new.url, "Age": "0" * age_length, "Referenced": 0}
+            bot.in_server[new.name] = {"Emoji": new.id, "URL": new.url, "Age": "1" * age_length, "Referenced": 0}
             print(f"Added the new emoji {new.name}.")
             break
     else:
-        gone = ""
         for emoji in before:
-            if emoji not in after and emoji not in list(bot.out_server.keys()):
+            if emoji not in after:
                 gone = emoji
                 print(f"Emoji {gone.name} is gone forever.")
                 break
 
-
-    if len([i for i in bot.get_all_emojis()]) > 48:
+    if len(list(bot.in_server.keys())) > 48:
         worst = {"worst": {"Emoji": 0, "URL": "no", "Age": "1" * age_length, "Referenced": 0}}
         for key in bot.in_server.keys():
             if bot.in_server[key]["Age"] <= worst[list(worst.keys())[0]]["Age"]:
@@ -95,10 +92,11 @@ async def on_server_emojis_update(before, after):
 
         await bot.delete_custom_emoji(discord.utils.get(new.server.emojis, name=list(worst.keys())[0]))
 
+
 @bot.event
 async def on_reaction_add(reaction, user):
     if user != bot.user and reaction.custom_emoji:
-        if reaction.emoji.name not in bot.in_server.keys() :
+        if reaction.emoji.name not in bot.in_server.keys():
             print("Emoji probably from outside the server used. Ignore.")
             return -2
         bot.in_server[reaction.emoji.name]["Referenced"] = 1
@@ -106,23 +104,26 @@ async def on_reaction_add(reaction, user):
 
 @bot.event
 async def on_message(message):
-    for emote in list(bot.in_server.keys()):
-        if f"<:{emote}:{bot.in_server[emote]['Emoji']}>" in message.content:
+    for emote in range(len(bot.checklist)):
+        if f"<:{bot.checklist[emote]}:{bot.in_server[bot.checklist[emote]]['Emoji']}>" in message.content:
             bot.in_server[emote]["Referenced"] = 1
+            bot.checklist.pop(emote)
 
     await bot.process_commands(message)
 
 
 async def update_age():
     for key in bot.in_server.keys():
-        bot.in_server[key]["Age"] = str(bot.in_server[key]["Referenced"]) + bot.in_server[key]["Age"][:-1]
+        bot.in_server[key]["Age"] = f"{bot.in_server[key]['Referenced'])}{bot.in_server[key]['Age'][:-1]}"
         bot.in_server[key]["Referenced"] = 0
 
 
 async def clock():
     await bot.wait_until_ready()
+    await asyncio.sleep(60)
 
     while not bot.is_closed:
+        bot.checklist = list(bot.in_server.keys())
         await update_age()
         await save()
         await asyncio.sleep(3600 * clock_hours)
